@@ -1,1 +1,1230 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Пульт вахты — Аксиома Сервис</title>
 
+<!--
+  ПУЛЬТ ВАХТЫ
+  Статика для GitHub Pages. Сборка не нужна — файл открывается как есть.
+
+  ПЕРЕД ПУБЛИКАЦИЕЙ заполните CFG в скрипте ниже (URL проекта и anon key).
+
+  Про anon key: его публикация безопасна и предусмотрена архитектурой Supabase —
+  доступ к данным ограничивает RLS, а не секретность ключа. А вот service_role key
+  в этот файл попадать не должен никогда: он обходит RLS.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,500;1,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #0f172a; --ink2: #1e293b; --sub: #64748b; --line: #e2e8f0; --line2: #eef2f6;
+    --card: #F4F8F9;
+    --grad-badge: linear-gradient(90deg, #F5C344, #F28482, #B567C2);
+    --g-orange: radial-gradient(circle at 50% 0%, rgba(255,179,71,0.5) 0%, rgba(249,237,150,0.4) 30%, #F4F8F9 62%, #F4F8F9 100%);
+    --g-pink:   radial-gradient(circle at 50% 0%, rgba(229,161,245,0.45) 0%, rgba(248,172,160,0.35) 30%, #F4F8F9 62%, #F4F8F9 100%);
+    --g-yellow: radial-gradient(circle at 50% 0%, rgba(249,237,150,0.55) 0%, rgba(229,161,245,0.3) 30%, #F4F8F9 62%, #F4F8F9 100%);
+    --ok: #16a34a; --ok-bg: #dcfce7; --warn: #d97706; --warn-bg: #fef3c7;
+    --bad: #dc2626; --bad-bg: #fee2e2; --acc: #a855f7; --acc-bg: #f3e8ff;
+  }
+  body { background:#fff; color:var(--ink); font-family:'Inter',system-ui,sans-serif;
+         font-size:13px; line-height:1.5; letter-spacing:-0.01em; }
+  a { color: var(--acc); text-decoration: none; }
+  a:hover { color: #9333ea; }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+  input::placeholder { color: #94a3b8; }
+  :focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+
+  .badge { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;
+           background:var(--grad-badge); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .playfair { font-family:'Playfair Display',serif; font-style:italic; font-weight:500; }
+
+  .pill { display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--ink);
+          border-radius:20px; padding:6px 16px; font-size:.78rem; font-weight:600; color:var(--ink2);
+          box-shadow:0 4px 15px rgba(0,0,0,.08); transition:transform .15s, box-shadow .15s; white-space:nowrap; }
+  .pill:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(0,0,0,.12); }
+  .pill:active { transform:scale(.97); }
+  .pill:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+  .pill.primary { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .pill.mini { padding:3px 12px; font-size:.72rem; box-shadow:none; }
+  .pill.ghost { border-color:var(--line); color:var(--sub); box-shadow:none; }
+  .pill.ghost:hover { border-color:var(--ink); color:var(--ink); }
+  .pill.danger { background:#991b1b; color:#fff; border-color:#991b1b; }
+
+  .tab { border:1px solid var(--line); background:#fff; color:var(--sub); border-radius:20px;
+         padding:4px 14px; font-size:.75rem; font-weight:500; }
+  .tab.on { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+
+  .chip { display:inline-block; font-size:.68rem; font-weight:600; padding:2px 10px; border-radius:20px;
+          background:#f1f5f9; color:var(--sub); white-space:nowrap; }
+  .chip.ok { background:var(--ok-bg); color:var(--ok); }
+  .chip.warn { background:var(--warn-bg); color:var(--warn); }
+  .chip.bad { background:var(--bad-bg); color:var(--bad); }
+  .chip.acc { background:var(--acc-bg); color:var(--acc); }
+  .chip.line { background:#fff; border:1px solid var(--line); font-weight:500; }
+
+  .card { background:var(--card); border:1px solid var(--line2); border-radius:20px;
+          box-shadow:0 10px 30px -10px rgba(0,0,0,.1); overflow:hidden; }
+  .card.g1 { background:var(--g-orange); }
+  .card.g2 { background:var(--g-pink); }
+  .card.g3 { background:var(--g-yellow); }
+  .card h3 { font-size:.92rem; font-weight:600; color:var(--ink2); }
+
+  .rise { animation: rise .45s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes toastIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rise, .toast, .modal-card, .hero-glow { animation: none !important; }
+    * { transition: none !important; }
+  }
+
+  table { border-collapse: collapse; width: 100%; }
+  th { text-align:left; font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+       color:var(--sub); padding:9px 14px; border-bottom:1px solid var(--line); background:#fbfcfd; white-space:nowrap; }
+  td { padding:9px 14px; border-bottom:1px solid var(--line2); font-size:.8rem; vertical-align:middle; }
+  tr:last-child td { border-bottom:0; }
+  tr.click { cursor:pointer; }
+  tr.click:hover td { background:#f8fafc; }
+  .mono { font-family: ui-monospace, Menlo, monospace; }
+  .dim { color: var(--sub); }
+
+  .layout { display:flex; min-height:100vh; }
+  .side { width:224px; flex:none; border-right:1px solid var(--line); background:#fff;
+          position:sticky; top:0; height:100vh; display:flex; flex-direction:column; }
+  .side .brand { padding:20px 18px 14px; border-bottom:1px solid var(--line2); }
+  .nav { display:flex; flex-direction:column; gap:5px; padding:14px 12px; }
+  .nav button { display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%;
+                text-align:left; padding:8px 14px; border-radius:20px; border:1px solid transparent;
+                background:transparent; font-size:.8rem; font-weight:500; color:var(--ink2); }
+  .nav button:hover { background:#f8fafc; }
+  .nav button.on { background:var(--ink); color:#fff; font-weight:600; }
+  .nav button .cnt { font-size:.66rem; font-weight:600; background:#f1f5f9; color:var(--sub);
+                     border-radius:20px; padding:1px 8px; }
+  .nav button.on .cnt { background:rgba(255,255,255,.2); color:#fff; }
+  .side .foot { margin-top:auto; padding:14px 18px; border-top:1px solid var(--line2); font-size:.72rem; color:var(--sub); }
+
+  .main { flex:1; min-width:0; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+            padding:16px 28px; border-bottom:1px solid var(--line2); background:#fff; position:sticky; top:0; z-index:5; }
+  .content { padding:24px 28px 56px; max-width:1200px; }
+
+  .stat { padding:18px 20px; }
+  .stat .n { font-size:1.9rem; font-weight:600; letter-spacing:-0.02em; }
+  .stat .l { font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--sub); margin-top:4px; }
+
+  .qrow { display:flex; align-items:center; gap:12px; padding:11px 4px; border-top:1px solid var(--line2); }
+  .qrow:first-child { border-top:0; }
+
+  .cell { min-width:22px; height:26px; text-align:center; font-size:.66rem; font-weight:700;
+          border-bottom:1px solid var(--line2); border-right:1px solid var(--line2); padding:0; }
+  .cell.v { background:var(--ok-bg); color:var(--ok); }
+  .cell.p { background:var(--warn-bg); color:var(--warn); }
+  .cell.o { background:#ede0ff; color:#7c3aed; }
+  .cell.s { background:#e0f2fe; color:#0369a1; }
+  .cell.t { box-shadow: inset 0 0 0 2px #F28482; }
+  .dayth { min-width:22px; padding:5px 0; text-align:center; font-size:.64rem; }
+  .dayth.we { background:#f1f5f9; }
+  .dayth.today { background:var(--ink); color:#fff; border-radius:6px; }
+
+  .toast { position:fixed; right:22px; bottom:22px; z-index:60; background:var(--ink); color:#fff;
+           border-radius:20px; padding:10px 20px; font-size:.8rem; font-weight:500; max-width:min(420px,90vw);
+           box-shadow:0 12px 30px rgba(15,23,42,.3); animation:toastIn .22s ease; }
+  .toast.err { background:#991b1b; }
+  .modal-ov { position:fixed; inset:0; z-index:80; background:rgba(15,23,42,.45);
+              display:flex; align-items:center; justify-content:center; padding:20px;
+              backdrop-filter:blur(3px); overflow-y:auto; }
+  .modal-card { background:#fff; border-radius:20px; padding:24px 26px; width:100%; max-width:480px;
+                box-shadow:0 24px 60px rgba(15,23,42,.35); border:1.5px solid #7c3aed;
+                animation:modalIn .22s cubic-bezier(0.4,0,0.2,1); }
+  @keyframes modalIn { from { opacity:0; transform:translateY(12px) scale(.97); } to { opacity:1; transform:none; } }
+
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:.72rem; font-weight:600; color:var(--sub); margin-bottom:5px; }
+  .field input, .field select { width:100%; padding:9px 14px; border-radius:12px; border:1px solid var(--line);
+                                background:#fff; color:var(--ink); font-size:.85rem; }
+  .field input:focus, .field select:focus { outline:2px solid #E5A1F5; outline-offset:1px; border-color:transparent; }
+
+  .empty { border:1px dashed #cbd5e1; border-radius:14px; padding:22px; text-align:center;
+           color:var(--sub); font-size:.78rem; background:rgba(255,255,255,.6); }
+
+  /* ---------- экран входа ---------- */
+  .hero { position:relative; width:100%; min-height:100vh; min-height:100dvh; overflow:hidden;
+          background: radial-gradient(circle at 50% 12%, #2c3c60 0%, #16203a 52%, #0a0f1c 100%);
+          font-family:'Instrument Serif',serif; display:flex; flex-direction:column; }
+  .hero-glow { position:absolute; inset:-20% -10% auto -10%; height:70%; pointer-events:none;
+               background: radial-gradient(ellipse at 50% 0%, rgba(245,195,68,.18) 0%, rgba(181,103,194,.12) 35%, transparent 70%);
+               animation: drift 14s ease-in-out infinite; }
+  @keyframes drift { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(24px) scale(1.06); } }
+  .mesh { position:absolute; inset:0; pointer-events:none; opacity:.5;
+          background-image: linear-gradient(rgba(255,255,255,.8) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,.8) 1px, transparent 1px);
+          background-size:16px 16px;
+          -webkit-mask-image: radial-gradient(circle at center top, rgba(0,0,0,.25) 0%, transparent 72%);
+          mask-image: radial-gradient(circle at center top, rgba(0,0,0,.25) 0%, transparent 72%); }
+  .liquid-glass { background:rgba(255,255,255,.04); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+                  border:1px solid rgba(255,255,255,.14); box-shadow: inset 0 1px 1px rgba(255,255,255,.12);
+                  position:relative; overflow:hidden; }
+  .hero-inner { position:relative; z-index:2; flex:1; display:flex; flex-direction:column;
+                padding:18px 22px 26px; color:#fff; }
+  .hero-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+               text-align:center; padding:20px 0; }
+  .hero h1 { font-size:clamp(2.2rem,7vw,5rem); line-height:1.1; font-weight:400; max-width:860px; margin:22px 0 18px; }
+  .hero p.lede { font-family:system-ui,sans-serif; font-size:.92rem; line-height:1.6; max-width:540px;
+                 opacity:.85; margin-bottom:26px; }
+  .hero input { background:none; border:none; outline:none; color:inherit;
+                font-family:system-ui,sans-serif; font-size:.85rem; }
+  .hero input::placeholder { color:currentColor; opacity:.55; }
+  .hero-getstarted { background:#fff; color:#182C41; border:none; border-radius:999px; padding:9px 22px;
+                     font-family:system-ui,sans-serif; font-size:.8rem; font-weight:600; cursor:pointer; }
+  .hero-getstarted:disabled { opacity:.6; cursor:wait; }
+  .hero-stats { color:rgba(255,255,255,.7); font-family:system-ui,sans-serif; font-size:.72rem;
+                display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:center; }
+  .hero-err { margin-top:12px; font-family:system-ui,sans-serif; font-size:.75rem; color:#ffb4b4;
+              background:rgba(0,0,0,.35); border-radius:999px; padding:6px 16px; }
+  @media (min-width:768px) { .hero-stats { font-size:.8rem; } }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction:column; }
+    .side { width:100%; height:auto; position:static; border-right:0; border-bottom:1px solid var(--line); }
+    .nav { flex-direction:row; flex-wrap:wrap; }
+    .nav button { width:auto; }
+    .side .foot { margin-top:0; }
+    .content { padding:18px 14px 44px; }
+    .topbar { padding:14px 14px; }
+  }
+</style>
+</head>
+<body>
+<div id="app" aria-live="polite"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+/* ====================================================================
+   КОНФИГУРАЦИЯ — заполнить перед публикацией
+   Project Settings → API → Project URL и anon public key
+   ==================================================================== */
+const CFG = {
+  SUPABASE_URL:      'https://ВАШ-PROJECT-REF.supabase.co',
+  SUPABASE_ANON_KEY: 'ВАШ-ANON-KEY',
+
+  // Кабинет OneTwoTrip B2B — покупка идёт только здесь.
+  // Розничный onetwotrip.com не использовать: оплата личной картой
+  // не даёт закрывающих документов для бухгалтерии.
+  OTT_CABINET: 'https://b2b.onetwotrip.com/',
+
+  // Если менеджер OTT подтвердит формат deep-link с маршрутом и датой —
+  // соберите ссылку здесь. Пока возвращаем кабинет.
+  buildBookingLink(emp) { return this.OTT_CABINET; }
+};
+
+const sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+
+/* ====================================================================
+   УТИЛИТЫ
+   ==================================================================== */
+
+// Экранирование: & < > " ' — полный набор, безопасно и в тексте, и в атрибутах
+const ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ESC_MAP[c]);
+
+const pad2 = n => String(n).padStart(2, '0');
+const DAY = 86400000;
+
+// Окно графика: с 1-го числа текущего месяца, 6 месяцев вперёд.
+// Считается при загрузке страницы — «сегодня» не разъезжается с реальностью.
+const now0 = new Date();
+const W0 = Date.UTC(now0.getFullYear(), now0.getMonth(), 1);
+const TODAY = Math.round((Date.UTC(now0.getFullYear(), now0.getMonth(), now0.getDate()) - W0) / DAY);
+
+const MONTHS = (() => {
+  const names = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+  const out = []; let off = 0;
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(W0); d.setUTCMonth(d.getUTCMonth() + i);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth();
+    const len = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    out.push({ label: names[m], year: y, mm: pad2(m + 1), off, len });
+    off += len;
+  }
+  return out;
+})();
+const TOTAL = MONTHS.reduce((s, m) => s + m.len, 0);
+
+const isoToIdx = s => s ? Math.round((Date.parse(s + 'T00:00:00Z') - W0) / DAY) : NaN;
+const idxToIso = i => new Date(W0 + i * DAY).toISOString().slice(0, 10);
+const idxToRu  = i => { const d = new Date(W0 + i * DAY); return pad2(d.getUTCDate()) + '.' + pad2(d.getUTCMonth() + 1); };
+const isoToRu  = s => s ? s.split('-').reverse().join('.') : '—';
+const nowTime  = () => { const d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
+const nowDate  = () => { const d = new Date(); return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear(); };
+const fmtMoney = v => v == null ? '—' : Number(v).toLocaleString('ru-RU') + ' ₽';
+
+/* ====================================================================
+   СОСТОЯНИЕ
+   ==================================================================== */
+const S = {
+  ready: false, authed: false, user: null, loading: false,
+  route: 'dash', objTab: 'АМУР', filter: 'все', q: '',
+  sel: null, schedMonth: MONTHS[0].label, modal: null, toast: null,
+  data: { employees: [], tickets: [], transfers: [], factors: [], surveys: [], log: [], settings: {} }
+};
+
+let toastTimer = null;
+function toast(text, isErr) {
+  S.toast = { text, err: !!isErr };
+  render();
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { S.toast = null; render(); }, 3200);
+}
+const fail = (e, what) => toast((what ? what + ': ' : '') + (e?.message || 'не удалось выполнить'), true);
+
+/* ====================================================================
+   ДАННЫЕ
+   ==================================================================== */
+async function loadAll() {
+  S.loading = true; render();
+  try {
+    const [emp, tik, trf, fac, srv, log, cfg] = await Promise.all([
+      sb.from('v_employees').select('*').order('fio_short'),
+      sb.from('tickets').select('*').order('created_at', { ascending: false }),
+      sb.from('transfers').select('*').order('created_at', { ascending: false }),
+      sb.from('factors').select('*'),
+      sb.from('surveys').select('*').order('created_at', { ascending: false }).limit(200),
+      sb.from('audit_log').select('*').order('ts', { ascending: false }).limit(200),
+      sb.from('settings').select('*')
+    ]);
+    const err = [emp, tik, trf, fac, srv, log, cfg].find(r => r.error);
+    if (err) throw err.error;
+
+    S.data.employees = emp.data || [];
+    S.data.tickets   = tik.data || [];
+    S.data.transfers = trf.data || [];
+    S.data.factors   = fac.data || [];
+    S.data.surveys   = srv.data || [];
+    S.data.log       = log.data || [];
+    S.data.settings  = Object.fromEntries((cfg.data || []).map(r => [r.key, r.value]));
+  } catch (e) {
+    fail(e, 'Загрузка данных');
+  } finally {
+    S.loading = false; render();
+  }
+}
+
+async function writeLog(action, message, employee_id, details) {
+  try {
+    await sb.from('audit_log').insert({ actor: 'kadrovik', action, message, employee_id: employee_id || null, details: details || null });
+  } catch (_) { /* журнал не должен ломать основное действие */ }
+}
+
+const activeEmployees = () => S.data.employees.filter(e => !e.is_archived && !e.fired_at);
+const empById = id => S.data.employees.find(e => e.id === id);
+const ticketsOf = (id, dir) => S.data.tickets.filter(t => t.employee_id === id && t.status !== 'отменён' && (!dir || t.direction === dir));
+const hasRequest = (id, dir) => ticketsOf(id, dir).length > 0;
+
+/* ====================================================================
+   ГРАФИК — расчёт сегментов
+   Пока Edge Function rebuild-schedule не задеплоена, сегменты считаются
+   здесь. Когда появится — берите готовые из schedule_segments.
+   ==================================================================== */
+function segments(p) {
+  const out = [];
+  const push = (k, a, b) => { a = Math.max(0, a); b = Math.min(TOTAL, b); if (b > a) out.push({ k, a, b }); };
+  const work = p.cycle_work || 30, rest = p.cycle_rest || 28, tr = p.travel_days ?? 2;
+  const ns = isoToIdx(p.next_shift);
+  const dOut = isoToIdx(p.date_out);
+
+  if (p.status === 'на вахте') {
+    const end = !isNaN(dOut) ? dOut : TODAY + work;
+    push('вахта', 0, end);
+    push('в пути', end, end + tr);
+    if (!isNaN(ns)) push('дома', end + tr, ns - tr);
+  } else if (!isNaN(ns)) {
+    push('дома', 0, ns - tr);
+  }
+
+  if (!isNaN(ns)) {
+    push('в пути', ns - tr, ns);
+    let s = ns, first = true, guard = 0;
+    while (s < TOTAL && guard++ < 40) {
+      let we = s + work;
+      if (first && !isNaN(dOut) && dOut > s) we = dOut;
+      push('вахта', s, we);
+      push('в пути', we, we + tr);
+      push('дома', we + tr, we + tr + rest);
+      push('в пути', we + tr + rest, we + tr + rest + tr);
+      s = we + tr + rest + tr;
+      first = false;
+    }
+  }
+
+  // Отпуск и больничный перекрывают всё — ставим первыми, find() выберет их
+  const over = S.data.factors
+    .filter(f => f.employee_id === p.id && (f.kind === 'отпуск' || f.kind === 'больничный'))
+    .map(f => ({ k: f.kind, a: isoToIdx(f.date_from), b: isoToIdx(f.date_to) + 1 }))
+    .filter(x => !isNaN(x.a) && !isNaN(x.b));
+
+  return over.concat(out);
+}
+
+const SEG_COLOR = { 'вахта':'#86efac', 'в пути':'#fde68a', 'дома':'#eef2f6', 'отпуск':'#ddd0ff', 'больничный':'#bae6fd' };
+function bars(p) {
+  return segments(p).map(s =>
+    `<div style="position:absolute;top:0;bottom:0;left:${(s.a / TOTAL * 100).toFixed(2)}%;width:${((s.b - s.a) / TOTAL * 100).toFixed(2)}%;background:${SEG_COLOR[s.k]}"></div>`
+  ).join('') +
+  `<div style="position:absolute;top:0;bottom:0;left:${(TODAY / TOTAL * 100).toFixed(2)}%;width:2px;background:#F28482"></div>`;
+}
+
+function dueOf(e) {
+  if (e.status === 'дома') {
+    if (e.days_to_shift == null) return { text: 'дата заезда не задана', warn: true, days: null };
+    return { text: 'на вахту через ' + e.days_to_shift + ' дн', warn: e.days_to_shift <= 21, days: e.days_to_shift };
+  }
+  if (e.status === 'на вахте') {
+    if (e.days_to_home == null) return { text: 'дата выезда не задана', warn: true, days: null };
+    return { text: 'домой через ' + e.days_to_home + ' дн', warn: e.days_to_home <= 21, days: e.days_to_home };
+  }
+  return { text: e.status, warn: false, days: null };
+}
+
+/* ====================================================================
+   ДЕЙСТВИЯ
+   ==================================================================== */
+const ACT = {
+
+  go(d)      { S.route = d.route; if (d.route === 'people') S.sel = null; render(); },
+  open(d)    { S.sel = d.id; S.route = 'person'; render(); },
+  objTab(d)  { S.objTab = d.val; render(); },
+  filter(d)  { S.filter = d.val; render(); },
+  month(d)   { S.schedMonth = d.val; render(); },
+  schedNav(d){
+    const i = MONTHS.findIndex(x => x.label === S.schedMonth);
+    S.schedMonth = MONTHS[Math.max(0, Math.min(MONTHS.length - 1, i + Number(d.step)))].label;
+    render();
+  },
+  closeModal() { S.modal = null; render(); },
+
+  async logout() { await sb.auth.signOut(); S.authed = false; S.user = null; render(); },
+
+  async copy(d) {
+    try { await navigator.clipboard.writeText(d.val); toast('Скопировано: ' + d.val); }
+    catch { toast('Скопировать не вышло — выделите вручную', true); }
+  },
+
+  // --- билеты -------------------------------------------------------
+  async reqTicket(d) {
+    const e = empById(d.id); if (!e) return;
+    const dir = d.dir;
+    if (hasRequest(e.id, dir)) { toast('Запрос уже создан: ' + e.fio_short); return; }
+
+    const departDate = dir === 'на вахту'
+      ? (e.next_shift ? idxToIso(isoToIdx(e.next_shift) - (e.travel_days ?? 2)) : null)
+      : e.date_out;
+    const legs = [e.city, 'Новосибирск', e.dest_city].filter(Boolean);
+    if (e.city === 'Новосибирск') legs.splice(1, 1);
+    const route = dir === 'на вахту' ? legs.join(' → ') : legs.slice().reverse().join(' → ');
+
+    const { error } = await sb.from('tickets').insert({
+      employee_id: e.id, direction: dir, status: 'запрошен',
+      route, depart_date: departDate, provider: 'OneTwoTrip B2B', source: 'manual'
+    });
+    if (error) return fail(error, 'Запрос билета');
+
+    if (e.needs_transfer && dir === 'на вахту') {
+      await sb.from('transfers').insert({
+        employee_id: e.id, direction: dir,
+        route: e.transfer_route || (e.city + ' → Новосибирск (Толмачёво)'),
+        carrier: e.transfer_carrier || 'Автолайн', service_date: departDate
+      });
+    }
+    await writeLog('ticket_request', 'Создан запрос билета ' + dir + ': ' + e.fio_short, e.id);
+    toast('Запрос создан: ' + e.fio_short + ' · ' + dir);
+    await loadAll();
+  },
+
+  async reqAll() {
+    const home = activeEmployees().filter(e => e.status === 'дома' && !hasRequest(e.id, 'на вахту'));
+    if (!home.length) return toast('Все запросы на заезд уже созданы');
+    for (const e of home) await ACT.reqTicket({ id: e.id, dir: 'на вахту' });
+    toast('Создано запросов: ' + home.length);
+  },
+
+  async chooseTicket(d) {
+    const t = S.data.tickets.find(x => x.id === d.id); if (!t) return;
+    const siblings = S.data.tickets.filter(x => x.employee_id === t.employee_id && x.direction === t.direction && x.is_chosen);
+    for (const s of siblings) await sb.from('tickets').update({ is_chosen: false }).eq('id', s.id);
+    const { error } = await sb.from('tickets').update({ is_chosen: true, status: 'к оформлению' }).eq('id', t.id);
+    if (error) return fail(error, 'Выбор варианта');
+    await writeLog('ticket_chosen', 'Вариант выбран к оформлению', t.employee_id, { ticket_id: t.id });
+    toast('Вариант выбран — оформляйте в кабинете');
+    await loadAll();
+  },
+
+  buyModal(d)      { S.modal = { kind: 'buy', id: d.id }; render(); },
+  passportModal(d) { S.modal = { kind: 'passport', id: d.id, loading: true, data: null }; render(); loadPassport(d.id); },
+
+  async savePurchase() {
+    const m = S.modal; if (!m || m.kind !== 'buy') return;
+    const g = id => (document.getElementById(id) || {}).value || '';
+    const patch = {
+      status: 'куплен',
+      pnr: g('f_pnr').trim() || null,
+      price: g('f_price') ? Number(g('f_price')) : null,
+      airline: g('f_airline').trim() || null,
+      flight_no: g('f_flight').trim() || null,
+      depart_date: g('f_date') || null,
+      is_chosen: true
+    };
+    if (!patch.pnr) return toast('Укажите PNR — по нему билет находится в кабинете', true);
+    const { error } = await sb.from('tickets').update(patch).eq('id', m.id);
+    if (error) return fail(error, 'Сохранение покупки');
+    const t = S.data.tickets.find(x => x.id === m.id);
+    await writeLog('ticket_purchased', 'Билет куплен · PNR ' + patch.pnr, t?.employee_id, { ticket_id: m.id });
+    S.modal = null;
+    toast('Билет отмечен купленным');
+    await loadAll();
+  },
+
+  async cancelTicket(d) {
+    if (!confirm('Отменить эту запись по билету?')) return;
+    const { error } = await sb.from('tickets').update({ status: 'отменён', is_chosen: false }).eq('id', d.id);
+    if (error) return fail(error, 'Отмена');
+    toast('Запись отменена');
+    await loadAll();
+  },
+
+  // --- трансфер и график -------------------------------------------
+  async transferReq(d) {
+    const e = empById(d.id); if (!e) return;
+    const { error } = await sb.from('transfers').insert({
+      employee_id: e.id, direction: 'на вахту',
+      route: e.transfer_route || (e.city + ' → Новосибирск (Толмачёво)'),
+      carrier: e.transfer_carrier || 'Автолайн',
+      service_date: e.next_shift ? idxToIso(isoToIdx(e.next_shift) - (e.travel_days ?? 2)) : null
+    });
+    if (error) return fail(error, 'Заявка на трансфер');
+    await writeLog('transfer_request', 'Заявка перевозчику: ' + e.fio_short, e.id);
+    toast('Заявка на трансфер создана');
+    await loadAll();
+  },
+
+  async setDate(d, el) {
+    const val = el.value; if (!val) return;
+    const field = d.field;
+    const { error } = await sb.from('employees').update({ [field]: val }).eq('id', d.id);
+    if (error) return fail(error, 'Сохранение даты');
+    await sb.from('factors').insert({
+      employee_id: d.id,
+      kind: field === 'next_shift' ? 'сдвиг заезда' : 'сдвиг выезда',
+      date_from: val, note: 'Изменено вручную в пульте', source: 'manual'
+    });
+    await writeLog('date_changed', (field === 'next_shift' ? 'Заезд' : 'Выезд') + ' → ' + isoToRu(val), d.id);
+    toast('Дата сохранена');
+    await loadAll();
+  },
+
+  async confirmDates(d) {
+    const { error } = await sb.from('factors').insert({
+      employee_id: d.id, kind: 'подтверждение', date_from: idxToIso(TODAY),
+      note: 'Сотрудник подтвердил даты', source: 'manual'
+    });
+    if (error) return fail(error, 'Подтверждение');
+    await writeLog('dates_confirmed', 'Сотрудник подтвердил даты', d.id);
+    toast('Подтверждение записано');
+    await loadAll();
+  },
+
+  // --- робот --------------------------------------------------------
+  async runEdge(d) {
+    toast('Запускаю: ' + d.fn + '…');
+    try {
+      const { data, error } = await sb.functions.invoke(d.fn, { body: {} });
+      if (error) throw error;
+      toast(data?.message || 'Готово');
+      await loadAll();
+    } catch (e) {
+      toast('Функция «' + d.fn + '» пока не задеплоена или вернула ошибку', true);
+    }
+  },
+
+  refresh() { loadAll(); },
+
+  // --- выгрузка -----------------------------------------------------
+  xls() {
+    const rows = activeEmployees().map(e => '<tr><td>' + [
+      e.fio, e.object_code || '', e.city || '', e.email || '', e.status,
+      isoToRu(e.next_shift), isoToRu(e.date_out), e.needs_transfer ? (e.transfer_carrier || 'да') : '—'
+    ].map(esc).join('</td><td>') + '</td></tr>').join('');
+
+    const trows = S.data.tickets.filter(t => t.status !== 'отменён').map(t => {
+      const e = empById(t.employee_id);
+      return '<tr><td>' + [
+        e?.fio_short || '', t.direction, t.route || '', isoToRu(t.depart_date),
+        t.airline || '', t.flight_no || '', t.price == null ? '' : t.price, t.pnr || '', t.status
+      ].map(esc).join('</td><td>') + '</td></tr>';
+    }).join('');
+
+    const html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'
+      + '<h3>График вахт — Аксиома Сервис · ' + nowDate() + ' ' + nowTime() + '</h3>'
+      + '<table border="1"><tr><th>ФИО</th><th>Объект</th><th>Город</th><th>Почта</th><th>Статус</th>'
+      + '<th>Заезд</th><th>Выезд домой</th><th>Трансфер</th></tr>' + rows + '</table>'
+      + '<br><h3>Билеты</h3><table border="1"><tr><th>Сотрудник</th><th>Направление</th><th>Маршрут</th>'
+      + '<th>Дата</th><th>Авиакомпания</th><th>Рейс</th><th>Цена</th><th>PNR</th><th>Статус</th></tr>'
+      + (trows || '<tr><td colspan="9">нет записей</td></tr>') + '</table></body></html>';
+
+    const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'График вахт — ' + nowDate() + '.xls';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('Файл сформирован');
+  },
+
+  // --- вход ---------------------------------------------------------
+  async login() {
+    const email = (document.getElementById('lg') || {}).value || '';
+    const pass  = (document.getElementById('pw') || {}).value || '';
+    if (!email || !pass) return toast('Введите почту и пароль', true);
+    const btn = document.getElementById('loginBtn'); if (btn) btn.disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: pass });
+    if (btn) btn.disabled = false;
+    if (error) {
+      const el = document.getElementById('lerr');
+      if (el) { el.textContent = 'Не удалось войти. Проверьте почту и пароль.'; el.style.display = 'block'; }
+      return;
+    }
+    // дальше сработает onAuthStateChange
+  }
+};
+
+// Паспорт запрашивается только здесь — по одному сотруднику, по явному действию.
+// В списочные запросы эта таблица не попадает никогда.
+async function loadPassport(empId) {
+  const { data, error } = await sb.from('passports').select('*').eq('employee_id', empId).maybeSingle();
+  if (S.modal && S.modal.kind === 'passport' && S.modal.id === empId) {
+    S.modal.loading = false;
+    S.modal.data = error ? null : data;
+    S.modal.error = error ? error.message : null;
+    render();
+  }
+}
+
+/* ====================================================================
+   ДЕЛЕГИРОВАНИЕ СОБЫТИЙ
+   Инлайновых onclick нет — данные передаются через data-атрибуты,
+   поэтому кавычки в ФИО и в ответах сотрудников ничего не ломают.
+   ==================================================================== */
+document.addEventListener('click', ev => {
+  // клик по затемнению вокруг модального окна закрывает его
+  if (ev.target.classList && ev.target.classList.contains('modal-ov')) {
+    S.modal = null; render(); return;
+  }
+  const el = ev.target.closest('[data-act]');
+  if (!el) return;
+  const fn = ACT[el.dataset.act];
+  if (!fn) return;
+  if (el.tagName === 'A' && !el.getAttribute('href')?.startsWith('http')) ev.preventDefault();
+  fn({ ...el.dataset }, el);
+});
+
+document.addEventListener('change', ev => {
+  const el = ev.target.closest('[data-change]');
+  if (!el) return;
+  const fn = ACT[el.dataset.change];
+  if (fn) fn({ ...el.dataset }, el);
+});
+
+document.addEventListener('input', ev => {
+  if (ev.target.id === 'srch') {
+    S.q = ev.target.value;
+    render();
+    const el = document.getElementById('srch');
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
+});
+
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && (ev.target.id === 'pw' || ev.target.id === 'lg')) ACT.login();
+  if (ev.key === 'Escape' && S.modal) { S.modal = null; render(); }
+});
+
+/* ====================================================================
+   ПРЕДСТАВЛЕНИЯ
+   ==================================================================== */
+const chip = (text, cls) => `<span class="chip ${cls || ''}">${esc(text)}</span>`;
+const dueChip = e => { const d = dueOf(e); return chip(d.text, d.warn ? 'warn' : 'line'); };
+const stChip = e => e.status === 'на вахте' ? chip('на вахте', 'ok')
+                  : e.status === 'в пути'   ? chip('в пути', 'warn')
+                  : chip(e.status, 'line');
+
+function stageBadge(e) {
+  if (e.fired_at) return chip('уволен · ' + isoToRu(e.fired_at), 'bad');
+  const dir = e.status === 'дома' ? 'на вахту' : 'домой';
+  const ts = ticketsOf(e.id, dir);
+  if (ts.some(t => t.status === 'куплен'))            return chip('✈ билет куплен', 'ok');
+  if (ts.some(t => t.status === 'к оформлению'))      return chip('к оформлению', 'acc');
+  if (ts.some(t => t.status === 'варианты получены')) return chip('варианты получены', 'acc');
+  if (ts.length)                                      return chip('запрос создан', 'warn');
+  const srv = S.data.surveys.find(s => s.employee_id === e.id && s.status === 'ответ получен');
+  if (srv) return chip('ответ получен', 'acc');
+  return chip('запрос не создан', 'line');
+}
+
+/* ---------- экран входа ---------- */
+function loginView() {
+  const cfgReady = !CFG.SUPABASE_URL.includes('ВАШ-');
+  return `
+  <section class="hero">
+    <div class="hero-glow"></div><div class="mesh"></div>
+    <div class="hero-inner">
+      <div style="display:flex;justify-content:center;align-items:center">
+        <span style="font-style:italic;font-size:1.5rem">Пульт вахты</span>
+      </div>
+      <div class="hero-body">
+        <div class="liquid-glass" style="border-radius:999px;padding:7px 18px;font-family:system-ui,sans-serif;font-size:.75rem">
+          Кадровая служба «Аксиома Сервис»
+        </div>
+        <h1>Порядок в бесконечном<br>потоке вахт</h1>
+        <p class="lede">Заезды, обратные билеты, трансферы и актуальный график — в одном окне, без переписки и разъезжающихся таблиц.</p>
+        ${cfgReady ? `
+        <div class="liquid-glass" style="border-radius:999px;display:flex;align-items:center;gap:2px;padding:5px 5px 5px 8px;flex-wrap:wrap;justify-content:center;max-width:96vw">
+          <input id="lg" type="email" autocomplete="username" placeholder="Почта" style="width:150px;padding:8px 10px" />
+          <span style="opacity:.3">·</span>
+          <input id="pw" type="password" autocomplete="current-password" placeholder="Пароль" style="width:130px;padding:8px 10px" />
+          <button id="loginBtn" class="hero-getstarted" data-act="login">Войти</button>
+        </div>
+        <div id="lerr" class="hero-err" style="display:none"></div>`
+        : `<div class="hero-err" style="display:block">
+             Не заполнена конфигурация. Укажите SUPABASE_URL и SUPABASE_ANON_KEY в index.html.
+           </div>`}
+      </div>
+      <div class="hero-stats">
+        <span>цикл <b style="color:#fff">30/28</b></span><span style="opacity:.4">|</span>
+        <span>водители <b style="color:#fff">31/27</b></span><span style="opacity:.4">|</span>
+        <span>объект <b style="color:#fff">АМУР · Малмыж ГОК</b></span>
+      </div>
+    </div>
+  </section>`;
+}
+
+/* ---------- дашборд ---------- */
+function dashView() {
+  const all = activeEmployees();
+  const home  = all.filter(e => e.status === 'дома').sort((a, b) => (a.days_to_shift ?? 999) - (b.days_to_shift ?? 999));
+  const shift = all.filter(e => e.status === 'на вахте').sort((a, b) => (a.days_to_home ?? 999) - (b.days_to_home ?? 999));
+  const enroute = all.filter(e => e.status === 'в пути');
+  const need = home.filter(e => !hasRequest(e.id, 'на вахту')).length + shift.filter(e => !hasRequest(e.id, 'домой')).length;
+
+  const cards = [
+    { n: shift.length, l: 'на вахте', c: 'var(--ok)', g: 'g3' },
+    { n: home.length, l: 'дома', c: 'var(--ink)', g: '' },
+    { n: enroute.length, l: 'в пути', c: 'var(--warn)', g: '' },
+    { n: need, l: 'требуют действий', c: '#B567C2', g: 'g2' }
+  ].map((c, i) => `<div class="card ${c.g} stat rise" style="animation-delay:${i * .06}s">
+      <div class="n" style="color:${c.c}">${c.n}</div><div class="l">${esc(c.l)}</div></div>`).join('');
+
+  const queueRow = (e, dir) => {
+    const sent = hasRequest(e.id, dir);
+    return `<div class="qrow">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <a href="#" data-act="open" data-id="${esc(e.id)}" style="color:var(--ink);font-weight:600;font-size:.85rem">${esc(e.fio_short || e.fio)}</a>
+          ${dueChip(e)}
+        </div>
+        <div class="dim" style="font-size:.72rem;margin-top:2px">${esc(e.city || '—')} → ${esc(e.dest_city || '—')}</div>
+      </div>
+      ${sent ? chip('✓ запрос создан', 'ok')
+             : `<button class="pill mini ${dir === 'на вахту' ? 'primary' : ''}" data-act="reqTicket" data-id="${esc(e.id)}" data-dir="${esc(dir)}">${dir === 'на вахту' ? 'Запросить билет' : 'Обратный билет'}</button>`}
+    </div>`;
+  };
+
+  const events = eventList(all).slice(0, 6);
+
+  return `${cards ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:20px">${cards}</div>` : ''}
+  <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(240px,1fr);gap:16px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="card g1 rise" style="padding:18px 20px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+          <h3>Билеты на заезд</h3><span class="dim" style="font-size:.72rem">${home.length} чел.</span></div>
+        ${home.length ? home.map(e => queueRow(e, 'на вахту')).join('') : '<div class="empty">Дома никого нет</div>'}
+      </div>
+      <div class="card g2 rise" style="padding:18px 20px;animation-delay:.08s">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+          <h3>Обратные билеты</h3><span class="dim" style="font-size:.72rem">${shift.length} чел.</span></div>
+        ${shift.length ? shift.map(e => queueRow(e, 'домой')).join('') : '<div class="empty">На вахте никого нет</div>'}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card rise" style="padding:18px 20px;animation-delay:.12s">
+        <h3 style="margin-bottom:10px">Регламент</h3>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:.76rem;color:var(--sub)">
+          <div style="display:flex;justify-content:space-between"><span>Цикл вахты</span><span class="mono" style="color:var(--ink)">30 / 28</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Водители</span><span class="mono" style="color:var(--ink)">31 / 27</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Койко-мест</span><span class="mono" style="color:var(--ink)">5</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Трансфер</span><span style="color:var(--ink)">Автолайн</span></div>
+        </div>
+        <button class="pill ghost mini" style="margin-top:14px" data-act="xls">Скачать график (.xls)</button>
+      </div>
+      <div class="card rise" style="padding:18px 20px;animation-delay:.16s">
+        <h3 style="margin-bottom:10px">Ближайшие события</h3>
+        ${events.length ? events.map(ev => `<div style="display:flex;gap:10px;align-items:baseline;font-size:.76rem;padding:4px 0">
+            <span class="mono" style="font-weight:600;color:${ev.color};white-space:nowrap">${ev.date}</span>
+            <span>${esc(ev.fio)} — ${esc(ev.what)}</span></div>`).join('')
+          : '<div class="empty">В ближайшие 45 дней событий нет</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+function eventList(all) {
+  const ev = [];
+  all.forEach(e => {
+    const ns = isoToIdx(e.next_shift), dOut = isoToIdx(e.date_out);
+    if (e.status === 'дома' && !isNaN(ns)) {
+      ev.push({ id: e.id, at: ns - (e.travel_days ?? 2), fio: e.fio_short || e.fio, what: 'выезд из города (' + (e.city || '—') + ')', color: 'var(--warn)' });
+      ev.push({ id: e.id, at: ns, fio: e.fio_short || e.fio, what: 'заезд на ' + (e.object_code || 'объект'), color: 'var(--ok)' });
+    } else if (e.status === 'на вахте' && !isNaN(dOut)) {
+      ev.push({ id: e.id, at: dOut, fio: e.fio_short || e.fio, what: 'выезд домой (' + (e.city || '—') + ')', color: 'var(--warn)' });
+    }
+  });
+  return ev.filter(x => x.at >= TODAY && x.at <= TODAY + 45)
+           .sort((a, b) => a.at - b.at)
+           .map(x => ({ ...x, date: idxToRu(x.at) }));
+}
+
+/* ---------- сотрудники ---------- */
+function peopleView() {
+  const objects = [...new Set(S.data.employees.map(e => e.object_code).filter(Boolean))];
+  const objTabs = (objects.length ? objects : ['АМУР']).map(o =>
+    `<button class="tab ${S.objTab === o ? 'on' : ''}" data-act="objTab" data-val="${esc(o)}">${esc(o)}</button>`).join('');
+  const fTabs = ['все', 'на вахте', 'дома'].map(f =>
+    `<button class="tab ${S.filter === f ? 'on' : ''}" data-act="filter" data-val="${esc(f)}">${esc(f)}</button>`).join('');
+
+  let list = S.data.employees.filter(e => !e.is_archived && e.object_code === S.objTab);
+  if (S.filter !== 'все') list = list.filter(e => e.status === S.filter);
+  if (S.q.trim()) {
+    const q = S.q.trim().toLowerCase();
+    list = list.filter(e => ((e.fio || '') + ' ' + (e.city || '') + ' ' + (e.email || '')).toLowerCase().includes(q));
+  }
+
+  const rows = list.map(e => {
+    const dir = e.status === 'дома' ? 'на вахту' : 'домой';
+    const sent = hasRequest(e.id, dir);
+    return `<tr class="click" data-act="open" data-id="${esc(e.id)}">
+      <td style="white-space:nowrap"><span style="font-weight:600">${esc(e.fio_short || e.fio)}</span>
+        <div class="dim mono" style="font-size:.66rem">${esc(e.email || '')}</div></td>
+      <td>${stageBadge(e)}</td>
+      <td style="white-space:nowrap">${esc(e.city || '—')}</td>
+      <td>${dueChip(e)}</td>
+      <td class="mono" style="white-space:nowrap">${isoToRu(e.next_shift)}</td>
+      <td>${e.needs_transfer ? chip(e.transfer_carrier || 'трансфер', 'acc') : '<span class="dim">—</span>'}</td>
+      <td style="text-align:right">${sent ? chip('✓', 'ok')
+        : `<button class="pill mini ghost" data-act="reqTicket" data-id="${esc(e.id)}" data-dir="${esc(dir)}">запросить</button>`}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      ${objTabs}<span style="width:1px;height:18px;background:var(--line);margin:0 6px"></span>${fTabs}
+      <input id="srch" value="${esc(S.q)}" placeholder="Поиск: фамилия, город, почта"
+        style="margin-left:auto;padding:7px 16px;border-radius:20px;border:1px solid var(--line);font-size:.8rem;width:230px" /></div>
+    <div class="card rise" style="overflow-x:auto">
+      <table><thead><tr><th>Сотрудник</th><th>Этап</th><th>Город</th><th>Ближайшее событие</th><th>След. заезд</th><th>Трансфер</th><th></th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:26px">Никого не нашлось — измените фильтр или запрос</td></tr>`}</tbody></table></div>`;
+}
+
+/* ---------- карточка сотрудника ---------- */
+function personView() {
+  const e = empById(S.sel);
+  if (!e) return '<div class="empty">Сотрудник не найден</div>';
+
+  const legs = [e.city, 'Новосибирск', e.dest_city].filter(Boolean);
+  if (e.city === 'Новосибирск') legs.splice(1, 1);
+  const route = legs.map((s, i) => `<span class="chip ${i === 0 ? 'acc' : 'line'}">${esc(s)}</span>` +
+    (i < legs.length - 1 ? '<span style="color:#cbd5e1">→</span>' : '')).join('');
+
+  const tk = S.data.tickets.filter(t => t.employee_id === e.id && t.status !== 'отменён');
+  const tr = S.data.transfers.filter(t => t.employee_id === e.id);
+  const fc = S.data.factors.filter(f => f.employee_id === e.id)
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+  return `<a href="#" class="dim" style="font-size:.75rem;display:inline-block;margin-bottom:14px" data-act="go" data-route="people">← к списку сотрудников</a>
+  <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(250px,1fr);gap:16px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+
+      <div class="card g1 rise" style="padding:22px 24px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:1.25rem;font-weight:600;letter-spacing:-0.02em">${esc(e.fio)}</span>
+          ${stageBadge(e)} ${chip(e.object_code || '—', 'line')} ${stChip(e)}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:16px">
+          <div><div class="badge" style="font-size:.62rem">Почта</div><div class="mono" style="font-size:.78rem;margin-top:3px;word-break:break-all">${esc(e.email || '—')}</div></div>
+          <div><div class="badge" style="font-size:.62rem">Телефон</div><div class="mono" style="font-size:.82rem;margin-top:3px">${esc(e.phone || '—')}</div></div>
+          <div><div class="badge" style="font-size:.62rem">Город выезда</div><div style="font-size:.82rem;margin-top:3px">${esc(e.city || '—')}</div></div>
+          <div><div class="badge" style="font-size:.62rem">Ближайшее событие</div><div style="font-size:.82rem;margin-top:3px">${esc(dueOf(e).text)}</div></div>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid rgba(15,23,42,.07);padding-top:14px">
+          <div class="badge" style="font-size:.62rem;margin-bottom:8px">Маршрут заезда</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${route}</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+          <button class="pill primary" data-act="reqTicket" data-id="${esc(e.id)}" data-dir="на вахту">Запросить билет на вахту</button>
+          <button class="pill" data-act="reqTicket" data-id="${esc(e.id)}" data-dir="домой">Запросить обратный</button>
+        </div>
+        <div style="margin-top:14px;border-top:1px solid rgba(15,23,42,.07);padding-top:12px">
+          <div class="badge" style="font-size:.62rem;margin-bottom:6px">Оформление</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <a class="pill mini primary" href="${esc(CFG.buildBookingLink(e))}" target="_blank" rel="noopener">Кабинет OneTwoTrip B2B ↗</a>
+            ${e.ott_profile_id
+              ? chip('профиль заведён в кабинете', 'ok')
+              : `<button class="pill mini ghost" data-act="passportModal" data-id="${esc(e.id)}">Данные пассажира</button>`}
+          </div>
+          <div class="dim" style="font-size:.68rem;margin-top:6px">
+            ${e.ott_profile_id
+              ? 'Паспорт подставляется из профиля в кабинете — у нас он не хранится.'
+              : 'Покупка только через корпоративный кабинет: там закрывающие документы и оплата со счёта компании.'}
+          </div>
+        </div>
+      </div>
+
+      <div class="card rise" style="padding:20px 24px;animation-delay:.06s">
+        <h3 style="margin-bottom:4px">Даты вахты</h3>
+        <div class="dim" style="font-size:.74rem;margin-bottom:14px">Меняются по ответам из почты или вручную здесь. График и выгрузка пересчитываются сразу.</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div class="field" style="margin:0"><label for="d_ns">Заезд на вахту</label>
+            <input id="d_ns" type="date" value="${esc(e.next_shift || '')}" data-change="setDate" data-id="${esc(e.id)}" data-field="next_shift" style="width:170px" /></div>
+          <div class="field" style="margin:0"><label for="d_do">Выезд домой</label>
+            <input id="d_do" type="date" value="${esc(e.date_out || '')}" data-change="setDate" data-id="${esc(e.id)}" data-field="date_out" style="width:170px" /></div>
+          <button class="pill" data-act="confirmDates" data-id="${esc(e.id)}"><span style="color:#F5C344">✦</span> Подтвердил даты</button>
+        </div>
+        ${fc.length ? `<div style="margin-top:14px;border-top:1px solid var(--line2);padding-top:12px;display:flex;flex-direction:column;gap:6px">
+          ${fc.slice(0, 8).map(f => `<div style="display:flex;gap:10px;align-items:baseline;font-size:.74rem">
+            <span class="mono dim" style="white-space:nowrap">${esc((f.created_at || '').slice(0, 10).split('-').reverse().join('.'))}</span>
+            <span>${chip(f.kind, 'line')} ${esc(f.note || '')} ${f.date_from ? esc(isoToRu(f.date_from)) : ''}${f.date_to ? ' — ' + esc(isoToRu(f.date_to)) : ''}</span>
+          </div>`).join('')}</div>` : ''}
+      </div>
+
+      <div class="card rise" style="padding:20px 24px;animation-delay:.1s">
+        <h3 style="margin-bottom:12px">Личный график</h3>
+        <div style="position:relative;height:22px;background:#f8fafc;border-radius:11px;overflow:hidden">${bars(e)}</div>
+        <div style="display:flex;margin-top:6px">
+          ${MONTHS.map(m => `<span class="dim" style="width:${(m.len / TOTAL * 100).toFixed(2)}%;font-size:.66rem">${esc(m.label)}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="card rise" style="padding:20px 24px;animation-delay:.14s">
+        <h3 style="margin-bottom:10px">Билеты</h3>
+        ${tk.length ? tk.map(t => `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line2);font-size:.78rem;flex-wrap:wrap">
+            <span style="flex:1;min-width:180px">${chip(t.direction, 'acc')} ${esc(t.route || '')} · ${esc(isoToRu(t.depart_date))}</span>
+            <span class="mono">${esc(fmtMoney(t.price))}</span>
+            ${t.pnr ? `<span class="mono chip line">${esc(t.pnr)}</span>` : ''}
+            ${chip(t.status, t.status === 'куплен' ? 'ok' : t.status === 'запрошен' ? 'warn' : 'acc')}
+            ${t.status !== 'куплен' ? `<button class="pill mini ghost" data-act="buyModal" data-id="${esc(t.id)}">отметить купленным</button>` : ''}
+          </div>`).join('')
+          : '<div class="empty">Запросов пока не было</div>'}
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card g2 rise" style="padding:18px 20px;animation-delay:.08s">
+        <h3 style="margin-bottom:8px">Трансфер</h3>
+        <div class="dim" style="font-size:.76rem;line-height:1.55;margin-bottom:10px">
+          ${e.needs_transfer
+            ? `Довоз до аэропорта — <b style="color:var(--ink)">${esc(e.transfer_carrier || 'перевозчик')}</b>, заявка письмом менеджеру.`
+            : 'Довоз до аэропорта — самостоятельно.'}
+          ${e.last_leg ? `Плечо <b style="color:var(--ink)">${esc(e.last_leg)}</b> — автобус до объекта.` : ''}
+        </div>
+        ${e.needs_transfer ? `<button class="pill mini primary" data-act="transferReq" data-id="${esc(e.id)}">Заявка на трансфер</button>` : ''}
+        ${tr.length ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:5px">
+          ${tr.map(t => `<div style="font-size:.72rem" class="dim">${esc(isoToRu(t.service_date))} · ${esc(t.route || '')} ${chip(t.status, 'warn')}</div>`).join('')}
+        </div>` : ''}
+      </div>
+      <div class="card rise" style="padding:18px 20px;animation-delay:.12s">
+        <h3 style="margin-bottom:8px">Регламент</h3>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:.76rem;color:var(--sub)">
+          <div style="display:flex;justify-content:space-between"><span>Цикл</span><span class="mono" style="color:var(--ink)">${e.cycle_work} / ${e.cycle_rest}</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Должность</span><span style="color:var(--ink)">${esc(e.position || '—')}</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Объект</span><span style="color:var(--ink)">${esc(e.object_name || '—')}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- билеты ---------- */
+function ticketsView() {
+  const list = S.data.tickets.filter(t => t.status !== 'отменён');
+  if (!list.length) return `<div class="card g1 rise" style="padding:44px;text-align:center;color:var(--sub);font-size:.85rem">
+    Записей нет. Нажмите <b style="color:var(--ink)">«Запросить билет»</b> у сотрудника — запрос появится здесь,
+    а после покупки в кабинете отметьте PNR и цену.</div>`;
+
+  return `<div class="card rise" style="overflow-x:auto">
+    <table><thead><tr><th>Сотрудник</th><th>Напр.</th><th>Маршрут</th><th>Дата</th><th>Рейс</th><th>Цена</th><th>PNR</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${list.map(t => {
+      const e = empById(t.employee_id);
+      return `<tr style="${t.is_chosen ? 'background:#faf7ff' : ''}">
+        <td style="font-weight:600;white-space:nowrap">${esc(e?.fio_short || '—')}</td>
+        <td>${chip(t.direction, 'acc')}</td>
+        <td class="dim" style="font-size:.74rem">${esc(t.route || '—')}</td>
+        <td class="mono" style="white-space:nowrap">${esc(isoToRu(t.depart_date))}</td>
+        <td style="font-size:.74rem">${esc([t.airline, t.flight_no].filter(Boolean).join(' · ') || '—')}</td>
+        <td class="mono" style="white-space:nowrap">${esc(fmtMoney(t.price))}</td>
+        <td class="mono">${esc(t.pnr || '—')}</td>
+        <td>${chip(t.status, t.status === 'куплен' ? 'ok' : t.status === 'запрошен' ? 'warn' : 'acc')}</td>
+        <td style="text-align:right;white-space:nowrap">
+          ${t.status === 'варианты получены' ? `<button class="pill mini ghost" data-act="chooseTicket" data-id="${esc(t.id)}">выбрать</button> ` : ''}
+          ${t.status !== 'куплен' ? `<button class="pill mini ghost" data-act="buyModal" data-id="${esc(t.id)}">куплен</button> ` : ''}
+          <button class="pill mini ghost" data-act="cancelTicket" data-id="${esc(t.id)}">✕</button>
+        </td></tr>`;
+    }).join('')}
+    </tbody></table></div>
+    <div class="dim" style="font-size:.74rem;margin-top:12px">
+      Покупка проходит в кабинете OneTwoTrip B2B — оттуда приходят закрывающие документы.
+      После оплаты отметьте PNR: по нему билет находится в кабинете и в письме.</div>`;
+}
+
+/* ---------- трансферы ---------- */
+function transfersView() {
+  if (!S.data.transfers.length) return `<div class="card g2 rise" style="padding:44px;text-align:center;color:var(--sub);font-size:.85rem">
+    Заявок нет. Для сотрудников из Кемеровской области заявка перевозчику создаётся вместе с запросом билета.</div>`;
+  return `<div class="card rise" style="overflow-x:auto">
+    <table><thead><tr><th>Сотрудник</th><th>Маршрут довоза</th><th>Перевозчик</th><th>Дата</th><th>Статус</th></tr></thead><tbody>
+    ${S.data.transfers.map(t => {
+      const e = empById(t.employee_id);
+      return `<tr><td style="font-weight:600;white-space:nowrap">${esc(e?.fio_short || '—')}</td>
+        <td class="dim" style="font-size:.74rem">${esc(t.route || '—')}</td>
+        <td>${esc(t.carrier || '—')}</td>
+        <td class="mono" style="white-space:nowrap">${esc(isoToRu(t.service_date))}</td>
+        <td>${chip(t.status, t.status === 'выполнена' ? 'ok' : 'warn')}</td></tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+}
+
+/* ---------- график ---------- */
+function scheduleView() {
+  const all = activeEmployees();
+  const m = MONTHS.find(x => x.label === S.schedMonth) || MONTHS[0];
+  const tabs = MONTHS.map(x => `<button class="tab ${x.label === m.label ? 'on' : ''}" data-act="month" data-val="${esc(x.label)}">${esc(x.label)}</button>`).join('');
+
+  const heads = Array.from({ length: m.len }, (_, i) => {
+    const idx = m.off + i, dow = new Date(W0 + idx * DAY).getUTCDay();
+    return `<th class="dayth ${idx === TODAY ? 'today' : (dow === 0 || dow === 6) ? 'we' : ''}">${i + 1}</th>`;
+  }).join('');
+
+  const CLS = { 'вахта':'v', 'в пути':'p', 'отпуск':'o', 'больничный':'s', 'дома':'' };
+  const LBL = { 'вахта':'В', 'в пути':'П', 'отпуск':'О', 'больничный':'Б', 'дома':'' };
+
+  const rows = all.map(p => {
+    const segs = segments(p);
+    let total = 0;
+    const cells = Array.from({ length: m.len }, (_, i) => {
+      const idx = m.off + i;
+      const sg = segs.find(s => idx >= s.a && idx < s.b);
+      const k = sg ? sg.k : 'дома';
+      if (k === 'вахта') total++;
+      const tip = (p.fio_short || p.fio) + ' · ' + pad2(i + 1) + '.' + m.mm + ' — ' + k;
+      return `<td class="cell ${CLS[k]} ${idx === TODAY ? 't' : ''}" title="${esc(tip)}">${LBL[k]}</td>`;
+    }).join('');
+    return `<tr><td class="click" data-act="open" data-id="${esc(p.id)}" style="font-weight:600;white-space:nowrap;border-right:1px solid var(--line)">${esc(p.fio_short || p.fio)}</td>
+      ${cells}<td class="mono" style="text-align:center;color:var(--ok);font-weight:700">${total}</td></tr>`;
+  }).join('');
+
+  return `<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <button class="pill mini" data-act="schedNav" data-step="-1" title="предыдущий месяц">◀</button>
+      ${tabs}
+      <button class="pill mini" data-act="schedNav" data-step="1" title="следующий месяц">▶</button>
+      <span style="width:1px;height:18px;background:var(--line);margin:0 6px"></span>
+      <span class="chip ok">В — вахта</span><span class="chip warn">П — в пути</span>
+      <span class="chip" style="background:#ede0ff;color:#7c3aed">О — отпуск</span>
+      <span class="chip" style="background:#e0f2fe;color:#0369a1">Б — больничный</span>
+      <span class="chip line">пусто — дома</span>
+      <button class="pill mini" style="margin-left:auto" data-act="xls"><span style="color:#F5C344">✦</span> Скачать .xls</button></div>
+    <div class="card rise" style="overflow-x:auto">
+      <table><thead><tr><th style="border-right:1px solid var(--line)">Сотрудник · ${esc(m.label)} ${m.year}</th>${heads}<th>Σ</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="33" style="text-align:center;padding:26px;color:var(--sub)">Сотрудников нет</td></tr>'}</tbody></table></div>
+    <div class="dim" style="font-size:.74rem;margin-top:12px">
+      График строится от даты заезда по регламенту цикла; «в пути» — по 2 дня в каждую сторону.
+      Отпуск и больничный перекрывают вахту.</div>`;
+}
+
+/* ---------- журнал ---------- */
+function logView() {
+  if (!S.data.log.length) return `<div class="card g1 rise" style="padding:44px;text-align:center;color:var(--sub);font-size:.85rem">
+    Журнал пуст. Здесь появятся все действия: созданные запросы, полученные ответы, купленные билеты и заявки на трансфер.</div>`;
+  return `<div class="card rise"><div style="display:flex;flex-direction:column">
+    ${S.data.log.map(x => {
+      const d = new Date(x.ts);
+      return `<div style="display:flex;gap:12px;align-items:baseline;padding:9px 14px;border-top:1px solid var(--line2)">
+        <span class="mono dim" style="white-space:nowrap;font-size:.72rem;min-width:96px">${pad2(d.getDate())}.${pad2(d.getMonth() + 1)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}</span>
+        <span class="chip line">${esc(x.actor)}</span>
+        <span style="font-size:.84rem">${esc(x.message || x.action)}</span></div>`;
+    }).join('')}
+  </div></div>`;
+}
+
+/* ---------- модальные окна ---------- */
+function modalView() {
+  if (!S.modal) return '';
+
+  if (S.modal.kind === 'buy') {
+    const t = S.data.tickets.find(x => x.id === S.modal.id);
+    if (!t) return '';
+    const e = empById(t.employee_id);
+    return `<div class="modal-ov">
+      <div class="modal-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+          <h3 style="color:#7c3aed;margin:0">Билет куплен</h3>
+          <button class="pill mini ghost" data-act="closeModal">✕</button></div>
+        <div style="font-weight:700;font-size:1rem">${esc(e?.fio_short || '')}</div>
+        <div class="dim" style="font-size:.8rem;margin:4px 0 16px">${esc(t.route || '')} · ${esc(t.direction)}</div>
+        <div class="field"><label for="f_pnr">PNR (код брони)</label><input id="f_pnr" value="${esc(t.pnr || '')}" placeholder="ABC123" /></div>
+        <div class="field"><label for="f_date">Дата вылета</label><input id="f_date" type="date" value="${esc(t.depart_date || '')}" /></div>
+        <div class="field"><label for="f_airline">Авиакомпания</label><input id="f_airline" value="${esc(t.airline || '')}" placeholder="S7 / Аэрофлот" /></div>
+        <div class="field"><label for="f_flight">Номер рейса</label><input id="f_flight" value="${esc(t.flight_no || '')}" placeholder="S7 2501" /></div>
+        <div class="field"><label for="f_price">Цена, ₽</label><input id="f_price" type="number" step="0.01" value="${t.price ?? ''}" /></div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="pill primary" data-act="savePurchase">Сохранить</button>
+          <button class="pill ghost" data-act="closeModal">Отмена</button></div>
+      </div></div>`;
+  }
+
+  if (S.modal.kind === 'passport') {
+    const e = empById(S.modal.id);
+    const p = S.modal.data;
+    const row = (label, val) => val ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line2)">
+      <span class="dim" style="font-size:.72rem;min-width:96px">${esc(label)}</span>
+      <span style="font-weight:600;flex:1;text-align:right;word-break:break-all">${esc(val)}</span>
+      <button class="pill mini ghost" style="padding:3px 10px" data-act="copy" data-val="${esc(val)}">копировать</button></div>` : '';
+
+    return `<div class="modal-ov">
+      <div class="modal-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <h3 style="color:#7c3aed;margin:0">Данные пассажира</h3>
+          <button class="pill mini ghost" data-act="closeModal">✕</button></div>
+        <div style="font-weight:700;font-size:1rem;margin-bottom:12px">${esc(e?.fio || '')}</div>
+        ${S.modal.loading ? '<div class="empty">Загружаю…</div>'
+          : p ? `<div style="background:#f6f2ff;border-radius:12px;padding:8px 14px 12px">
+                ${row('Фамилия', p.last_name_lat)}${row('Имя', p.first_name_lat)}${row('Отчество', p.middle_name_lat)}
+                ${row('Пол', p.sex === 'ж' ? 'женский' : p.sex === 'м' ? 'мужской' : '')}
+                ${row('Дата рожд.', isoToRu(p.birth_date))}${row('Документ', p.doc_number)}${row('Гражданство', p.citizenship)}
+              </div>
+              <div class="dim" style="font-size:.72rem;margin-top:10px">
+                Данные показаны только сейчас и только по этому сотруднику — в списки они не попадают.</div>`
+          : `<div class="empty">Паспортных данных нет.<br><br>
+               Если профили сотрудников заведены в кабинете OneTwoTrip B2B — так и должно быть:
+               паспорт подставится там автоматически, а у нас не хранится.</div>`}
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <a class="pill mini primary" href="${esc(CFG.OTT_CABINET)}" target="_blank" rel="noopener">Открыть кабинет ↗</a>
+          <button class="pill mini ghost" data-act="closeModal">Закрыть</button></div>
+      </div></div>`;
+  }
+  return '';
+}
+
+/* ====================================================================
+   КАРКАС
+   ==================================================================== */
+function render() {
+  const app = document.getElementById('app');
+  const toastHtml = S.toast ? `<div class="toast ${S.toast.err ? 'err' : ''}">${esc(S.toast.text)}</div>` : '';
+
+  if (!S.ready) { app.innerHTML = ''; return; }
+  if (!S.authed) { app.innerHTML = loginView() + toastHtml; return; }
+
+  const all = activeEmployees();
+  const need = all.filter(e => e.status === 'дома'     && !hasRequest(e.id, 'на вахту')).length
+             + all.filter(e => e.status === 'на вахте' && !hasRequest(e.id, 'домой')).length;
+
+  const NAV = [
+    ['dash',      'Дашборд',    need],
+    ['people',    'Сотрудники', all.length],
+    ['tickets',   'Билеты',     S.data.tickets.filter(t => t.status !== 'отменён').length],
+    ['transfers', 'Трансферы',  S.data.transfers.length],
+    ['schedule',  'График',     '30/28'],
+    ['log',       'Журнал',     S.data.log.length]
+  ];
+  const active = S.route === 'person' ? 'people' : S.route;
+  const sel = S.sel ? empById(S.sel) : null;
+  const TITLES = {
+    dash:      ['Дашборд', need + ' требуют действий'],
+    people:    ['Сотрудники', S.objTab + ' · ' + all.filter(e => e.object_code === S.objTab).length + ' чел.'],
+    person:    [sel?.fio_short || sel?.fio || '—', 'карточка сотрудника'],
+    tickets:   ['Билеты', S.data.tickets.filter(t => t.status !== 'отменён').length + ' записей'],
+    transfers: ['Трансферы', S.data.transfers.length + ' заявок'],
+    schedule:  ['График вахт', S.schedMonth + ' ' + (MONTHS.find(m => m.label === S.schedMonth)?.year || '')],
+    log:       ['Журнал', S.data.log.length + ' записей']
+  };
+
+  const view = S.loading ? '<div class="empty">Загружаю данные…</div>'
+    : S.route === 'dash'      ? dashView()
+    : S.route === 'people'    ? peopleView()
+    : S.route === 'person'    ? personView()
+    : S.route === 'tickets'   ? ticketsView()
+    : S.route === 'transfers' ? transfersView()
+    : S.route === 'log'       ? logView()
+    : scheduleView();
+
+  app.innerHTML = `<div class="layout">
+    <nav class="side">
+      <div class="brand">
+        <div class="playfair" style="font-size:1.35rem">Пульт вахты</div>
+        <div class="badge" style="font-size:.6rem;margin-top:4px">Аксиома Сервис · кадры</div>
+      </div>
+      <div class="nav">${NAV.map(([id, label, cnt]) =>
+        `<button class="${id === active ? 'on' : ''}" data-act="go" data-route="${esc(id)}">
+           <span>${esc(label)}</span><span class="cnt">${esc(cnt)}</span></button>`).join('')}</div>
+      <div class="foot">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="min-width:0">
+            <div style="font-weight:600;color:var(--ink);font-size:.78rem">Кадровик</div>
+            <div class="mono" style="font-size:.62rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(S.user?.email || '')}</div></div>
+          <button class="pill ghost mini" data-act="logout">выйти</button></div>
+        <div style="border-top:1px solid var(--line2);padding-top:8px">Обновлено ${nowDate()} · ${nowTime()}</div>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div style="font-size:1.15rem;font-weight:600;letter-spacing:-0.02em">${esc(TITLES[S.route][0])}</div>
+          <div class="badge" style="font-size:.62rem;margin-top:2px">${esc(TITLES[S.route][1])}</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="pill primary" data-act="reqAll">Запросить всем на заезд</button>
+          <button class="pill" data-act="runEdge" data-fn="mail-poll">Проверить почту</button>
+          <button class="pill ghost" data-act="refresh">Обновить</button>
+        </div>
+      </div>
+      <div class="content">${view}</div>
+    </div>
+  </div>` + modalView() + toastHtml;
+}
+
+/* ====================================================================
+   ЗАПУСК
+   ==================================================================== */
+sb.auth.onAuthStateChange((_event, session) => {
+  const wasAuthed = S.authed;
+  S.authed = !!session;
+  S.user = session?.user || null;
+  S.ready = true;
+  render();
+  if (S.authed && !wasAuthed) loadAll();
+});
+
+(async () => {
+  const { data } = await sb.auth.getSession();
+  S.authed = !!data.session;
+  S.user = data.session?.user || null;
+  S.ready = true;
+  render();
+  if (S.authed) loadAll();
+})();
+</script>
+</body>
+</html>
